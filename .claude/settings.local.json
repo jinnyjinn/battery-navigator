@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(dir %USERPROFILE%interview-consultant)",
+      "Bash(echo $env:USERPROFILE)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(vercel --version)",
+      "Bash(npm install -g vercel)",
+      "Bash(vercel whoami)",
+      "Bash(git config --global user.name)",
+      "Bash(git config --global user.email)",
+      "Bash(git init)",
+      "Bash(git add .)",
+      "Bash(git commit -m \"feat: 면접 컨설팅 보고서 생성기 초기 커밋\")"
+    ]
+  }
+}
