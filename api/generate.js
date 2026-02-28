@@ -130,10 +130,10 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
     async start(controller) {
       try {
         if (isGemini) {
-          const geminiModel = model === 'gemini-pro' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+          // Gemini API 스트리밍
           const combinedPrompt = `[시스템 지침]\n${SYSTEM_PROMPT}\n\n[사용자 요청]\n${userPrompt}`;
 
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${activeKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -185,7 +185,7 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
               'anthropic-version': '2023-06-01',
             },
             body: JSON.stringify({
-              model: 'claude-3-5-sonnet-20240620', // 최신 모델로 업데이트
+              model: model || 'claude-3-5-sonnet-20240620',
               max_tokens: 8000,
               stream: true,
               system: SYSTEM_PROMPT,
