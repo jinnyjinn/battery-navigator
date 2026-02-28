@@ -130,11 +130,10 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
     async start(controller) {
       try {
         if (isGemini) {
-          // Gemini API 스트리밍 (v1 정식 버전 + URL 인증으로 호환성 극대화)
           const geminiModel = model === 'gemini-pro' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
           const combinedPrompt = `[시스템 지침]\n${SYSTEM_PROMPT}\n\n[사용자 요청]\n${userPrompt}`;
 
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -48,7 +48,7 @@ app.post('/api/generate', async (req, res) => {
       const geminiModel = model === 'gemini-pro' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
       const combinedPrompt = `[SYSTEM INSTRUCTION]\n${SYSTEM_PROMPT}\n\n[USER REQUEST]\n${userPrompt}`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
