@@ -74,18 +74,10 @@
             <option>박사 재학 중</option><option>박사 졸업</option>
           </select>
         </div>
-        <div class="form-row">
-          <label class="form-label">전공 <span class="required">*</span></label>
-          <input type="text" id="major" placeholder="예: 화학공학, 신소재공학, 생명공학" />
-        </div>
-        <div class="form-row">
-          <label class="form-label">면접 형식</label>
-          <select id="interviewType">
-            <option>임원 면접 + 실무진 면접</option>
-            <option>임원 면접</option><option>실무진 면접</option>
-            <option>PT 면접 + 질의응답</option><option>토론 면접</option>
-          </select>
-        </div>
+      </div>
+      <div class="form-row" style="margin-top:4px">
+        <label class="form-label">전공 <span class="required">*</span></label>
+        <input type="text" id="major" placeholder="예: 화학공학, 신소재공학, 생명공학" />
       </div>
     </div>
 
@@ -93,20 +85,46 @@
       <div class="card-header">
         <span class="card-icon">📄</span>
         <span class="card-title">이력서 / 자기소개서</span>
-        <span class="card-sub">전체 원문을 붙여넣으세요</span>
+        <span class="card-sub">파일 업로드 또는 직접 입력</span>
       </div>
-      <div class="form-row">
-        <label class="form-label">원문 내용 <span class="required">*</span></label>
-        <textarea id="resumeText" rows="14" placeholder="이력서와 자기소개서 전체 내용을 붙여넣으세요.
+
+      <!-- 파일 업로드 존 -->
+      <div class="upload-zone" id="uploadZone"
+           onclick="document.getElementById('resumeFile').click()"
+           ondragover="event.preventDefault(); this.classList.add('drag-over')"
+           ondragleave="if(!this.contains(event.relatedTarget)) this.classList.remove('drag-over')"
+           ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleFileDrop(event)">
+        <input type="file" id="resumeFile" accept=".pdf,.docx,.doc,.txt" style="display:none"
+               onchange="handleFileSelect(this)" />
+        <div class="upload-icon-big">📁</div>
+        <p class="upload-main-text">파일을 드래그하거나 클릭하여 업로드</p>
+        <p class="upload-sub-text">PDF · DOCX · TXT 형식 지원</p>
+        <button class="btn btn-outline btn-sm" type="button"
+                onclick="event.stopPropagation(); document.getElementById('resumeFile').click()">
+          파일 선택
+        </button>
+      </div>
+
+      <!-- 업로드 상태 -->
+      <div class="upload-status hidden" id="uploadStatus">
+        <span class="upload-file-icon">📎</span>
+        <span class="upload-file-name" id="uploadFilename"></span>
+        <span class="upload-char-count" id="uploadChars"></span>
+        <button class="btn-file-remove" onclick="clearFile()" title="파일 제거">✕ 제거</button>
+      </div>
+
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label" style="margin-bottom:6px">
+          직접 입력 또는 파일 추출 결과 <span class="required">*</span>
+          <span class="hint-text">파일 업로드 후 수정 가능합니다</span>
+        </label>
+        <textarea id="resumeText" rows="10" placeholder="이력서와 자기소개서 전체 내용을 붙여넣거나, 위에서 파일을 업로드하세요.
 
 [예시]
 ■ 학력: 한국대학교 화학공학과 4학년 (GPA 4.0/4.5)
 ■ 연구 경험
   - 리튬이온배터리 NMC811 양극재 합성 및 전기화학 특성 평가 (6개월)
   - HPLC, GC-MS를 활용한 유기 합성 순도 분석
-■ 캡스톤 프로젝트: Aspen Plus 시뮬레이션을 통한 에스테르화 공정 최적화
-  - 반응 수율 65% → 82% 달성 (온도·촉매 농도 DoE 실험계획법 적용)
-■ 자격증: 위험물 산업기사, TOEIC 850
 ■ 자기소개서: ..."></textarea>
         <div class="char-counter"><span id="charCount">0</span>자</div>
       </div>
@@ -126,7 +144,7 @@
       <button class="btn btn-primary btn-xl" onclick="generateReport()">
         🚀 면접 컨설팅 보고서 생성
       </button>
-      <p class="generate-hint">Claude AI가 지원자 역량을 분석하고 3페이지 맞춤 보고서를 작성합니다 (약 30~60초)</p>
+      <p class="generate-hint">임원·실무진·PT·토론 면접 형식별 맞춤 보고서를 자동으로 작성합니다 (약 30~60초)</p>
     </div>
 
   </section>
@@ -172,6 +190,8 @@
   <p>화학·배터리·바이오 면접 컨설팅 보고서 생성기 &nbsp;|&nbsp; Claude AI 기반 &nbsp;|&nbsp; 비전문가 임원 · 실무진 면접관 모두를 위한 구조화 보고서</p>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="app.js"></script>
 </body>
