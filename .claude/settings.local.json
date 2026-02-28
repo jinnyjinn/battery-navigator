@@ -12,7 +12,17 @@
       "Bash(git config --global user.email)",
       "Bash(git init)",
       "Bash(git add .)",
-      "Bash(git commit -m \"feat: 면접 컨설팅 보고서 생성기 초기 커밋\")"
+      "Bash(git commit -m \"feat: 면접 컨설팅 보고서 생성기 초기 커밋\")",
+      "Bash(gh repo create battery-navigator --public --source=. --remote=origin --push)",
+      "Bash(curl -s https://api.github.com/users/jinnyjinn)",
+      "Bash(git remote add origin https://github.com/jinnyjinn/battery-navigator.git)",
+      "Bash(git push -u origin master)",
+      "Bash(git add api/generate.js public/app.js server.js vercel.json)",
+      "Bash(git commit:*)",
+      "Bash(vercel link --project battery-navigator)",
+      "Bash(git push origin master)",
+      "Bash(git add vercel.json)",
+      "Bash(git add public/index.html public/app.js public/style.css api/generate.js server.js)"
     ]
   }
 }

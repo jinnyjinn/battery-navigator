@@ -18,8 +18,32 @@ async function checkServerApiKey() {
   try {
     const res = await fetch('/api/health');
     const data = await res.json();
-    if (data.serverApiKey) document.getElementById('serverKeyBadge').style.display = 'flex';
-  } catch (_) {}
+    window.serverKeys = {
+      claude: data.hasAnthropicKey,
+      gemini: data.hasGeminiKey
+    };
+    updateApiKeyLabel();
+  } catch (_) { }
+}
+
+function updateApiKeyLabel() {
+  const model = document.getElementById('aiModel').value;
+  const label = document.getElementById('apiKeyLabel');
+  const input = document.getElementById('apiKey');
+  const badge = document.getElementById('serverKeyBadge');
+  const headerBadge = document.getElementById('modelBadge');
+
+  if (model.startsWith('claude')) {
+    label.innerHTML = 'Claude (Anthropic) API Key <span class="hint-text">서버 .env에 API 키가 있으면 비워두어도 됩니다</span>';
+    input.placeholder = 'sk-ant-api03-...';
+    headerBadge.textContent = 'Claude 3.5 Sonnet 기반';
+    badge.style.display = window.serverKeys?.claude ? 'flex' : 'none';
+  } else {
+    label.innerHTML = 'Gemini (Google Cloud) API Key <span class="hint-text">서버 .env에 API 키가 있으면 비워두어도 됩니다</span>';
+    input.placeholder = 'AIzaSy...';
+    headerBadge.textContent = model === 'gemini-pro' ? 'Gemini 1.5 Pro 기반' : 'Gemini 1.5 Flash 기반';
+    badge.style.display = window.serverKeys?.gemini ? 'flex' : 'none';
+  }
 }
 
 /* ─── 파일 업로드 ─── */
@@ -158,7 +182,7 @@ function removeCompany(id) {
   document.getElementById(id)?.remove();
   document.querySelectorAll('.company-entry').forEach((el, i) => {
     el.querySelector('.company-label').innerHTML =
-      `<span class="company-num">${i+1}</span>지원 회사 ${i+1}`;
+      `<span class="company-num">${i + 1}</span>지원 회사 ${i + 1}`;
   });
 }
 
@@ -170,39 +194,40 @@ function toggleApiKey() {
 /* ─── 스텝 UI ─── */
 
 function setStep(n) {
-  ['sStep1','sStep2','sStep3'].forEach((id, i) => {
+  ['sStep1', 'sStep2', 'sStep3'].forEach((id, i) => {
     const el = document.getElementById(id);
-    el.classList.remove('active','done');
-    if (i+1 < n) el.classList.add('done');
-    else if (i+1 === n) el.classList.add('active');
+    el.classList.remove('active', 'done');
+    if (i + 1 < n) el.classList.add('done');
+    else if (i + 1 === n) el.classList.add('active');
   });
 }
 
 /* ─── 보고서 생성 ─── */
 
 async function generateReport() {
-  const apiKey        = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('aiModel').value;
+  const apiKey = document.getElementById('apiKey').value.trim();
   const candidateName = document.getElementById('candidateName').value.trim() || '지원자';
-  const education     = document.getElementById('education').value;
-  const major         = document.getElementById('major').value.trim();
-  const resumeText    = document.getElementById('resumeText').value.trim();
+  const education = document.getElementById('education').value;
+  const major = document.getElementById('major').value.trim();
+  const resumeText = document.getElementById('resumeText').value.trim();
 
   const companies = [];
   document.querySelectorAll('.company-entry').forEach(el => {
-    const name  = el.querySelector('.co-name')?.value.trim();
-    const pos   = el.querySelector('.co-pos')?.value.trim();
+    const name = el.querySelector('.co-name')?.value.trim();
+    const pos = el.querySelector('.co-pos')?.value.trim();
     const extra = el.querySelector('.co-extra')?.value.trim() || '';
     if (name && pos) companies.push({ name, position: pos, extra });
   });
 
-  if (!resumeText)       return showToast('이력서 / 자기소개서 내용을 입력하거나 파일을 업로드해주세요.', 'error');
+  if (!resumeText) return showToast('이력서 / 자기소개서 내용을 입력하거나 파일을 업로드해주세요.', 'error');
   if (!companies.length) return showToast('지원 회사와 희망 직무를 최소 1개 입력해주세요.', 'error');
 
   document.getElementById('inputSection').classList.add('hidden');
   document.getElementById('loadingSection').classList.remove('hidden');
   setStep(2);
 
-  const lSteps  = ['ls1','ls2','ls3','ls4'];
+  const lSteps = ['ls1', 'ls2', 'ls3', 'ls4'];
   const lTitles = [
     'AI가 지원자 역량을 분석 중입니다...',
     '산업 트렌드와 경험을 매핑 중입니다...',
@@ -213,12 +238,12 @@ async function generateReport() {
   document.getElementById('loadingTitle').textContent = lTitles[0];
   let lIdx = 1;
   const lInterval = setInterval(() => {
-    document.getElementById(lSteps[lIdx-1]).classList.replace('active','done');
+    document.getElementById(lSteps[lIdx - 1]).classList.replace('active', 'done');
     if (lIdx < lSteps.length) {
       document.getElementById(lSteps[lIdx]).classList.add('active');
       document.getElementById('loadingTitle').textContent = lTitles[lIdx];
     }
-    lIdx = Math.min(lIdx+1, lSteps.length);
+    lIdx = Math.min(lIdx + 1, lSteps.length);
   }, 8000);
 
   fullReportText = '';
@@ -229,7 +254,7 @@ async function generateReport() {
     const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey, candidateName, education, major, resumeText, companies })
+      body: JSON.stringify({ model, apiKey, candidateName, education, major, resumeText, companies })
     });
 
     if (!res.ok) {
@@ -237,7 +262,7 @@ async function generateReport() {
       throw new Error(err.error || '서버 오류');
     }
 
-    const reader  = res.body.getReader();
+    const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
 
@@ -282,9 +307,9 @@ function renderReport(md, candidateName, companies) {
   document.getElementById('reportBody').innerHTML = marked.parse(md);
 
   const today = new Date();
-  const ds = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
+  const ds = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
   document.getElementById('reportMeta').innerHTML =
-    `<strong>${candidateName}</strong> | ${companies.map(c=>`${c.name}(${c.position})`).join(' · ')} | ${ds}`;
+    `<strong>${candidateName}</strong> | ${companies.map(c => `${c.name}(${c.position})`).join(' · ')} | ${ds}`;
 
   document.getElementById('loadingSection').classList.add('hidden');
   document.getElementById('reportSection').classList.remove('hidden');

@@ -1,124 +1,139 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>면접 컨설팅 보고서 생성기 | 화학·배터리·바이오 특화</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
-<header class="site-header">
-  <div class="header-inner">
-    <div class="header-logo">
-      <span class="logo-icon">🧪</span>
-      <div>
-        <div class="logo-title">면접 컨설팅 보고서 생성기</div>
-        <div class="logo-sub">화학 · 배터리 · 바이오 R&amp;D / QC / 공정개발 직무 특화 AI</div>
-      </div>
-    </div>
-    <div class="header-badge">Claude AI 기반</div>
-  </div>
-</header>
-
-<main class="container">
-
-  <div class="steps-bar">
-    <div class="step active" id="sStep1"><span class="step-num">1</span> 지원자 정보 입력</div>
-    <div class="step-arrow">›</div>
-    <div class="step" id="sStep2"><span class="step-num">2</span> AI 보고서 생성</div>
-    <div class="step-arrow">›</div>
-    <div class="step" id="sStep3"><span class="step-num">3</span> 결과 확인 · 출력</div>
-  </div>
-
-  <!-- 입력 섹션 -->
-  <section id="inputSection">
-
-    <div class="card">
-      <div class="card-header">
-        <span class="card-icon">🔑</span>
-        <span class="card-title">API 설정</span>
-        <span class="card-badge" id="serverKeyBadge" style="display:none;">✅ 서버 API 키 설정됨</span>
-      </div>
-      <div class="form-row">
-        <label class="form-label">
-          Claude (Anthropic) API Key
-          <span class="hint-text">서버 .env에 API 키가 있으면 비워두어도 됩니다</span>
-        </label>
-        <div class="input-wrap">
-          <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off" />
-          <button class="btn-eye" onclick="toggleApiKey()">👁</button>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <span class="logo-icon">🧪</span>
+        <div>
+          <div class="logo-title">면접 컨설팅 보고서 생성기</div>
+          <div class="logo-sub">화학 · 배터리 · 바이오 R&amp;D / QC / 공정개발 직무 특화 AI</div>
         </div>
-        <p class="warning-box">⚠️ API 키는 서버에서만 사용되며 저장되지 않습니다. 프로덕션 환경에서는 서버 .env 파일에 직접 설정하세요.</p>
       </div>
+      <div class="header-badge" id="modelBadge">Claude 3.5 Sonnet 기반</div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <div class="steps-bar">
+      <div class="step active" id="sStep1"><span class="step-num">1</span> 지원자 정보 입력</div>
+      <div class="step-arrow">›</div>
+      <div class="step" id="sStep2"><span class="step-num">2</span> AI 보고서 생성</div>
+      <div class="step-arrow">›</div>
+      <div class="step" id="sStep3"><span class="step-num">3</span> 결과 확인 · 출력</div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <span class="card-icon">👤</span>
-        <span class="card-title">지원자 기본 정보</span>
-      </div>
-      <div class="form-grid-2">
-        <div class="form-row">
-          <label class="form-label">지원자 이름</label>
-          <input type="text" id="candidateName" placeholder="홍길동" />
+    <!-- 입력 섹션 -->
+    <section id="inputSection">
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">⚙️</span>
+          <span class="card-title">AI 모델 및 API 설정</span>
+          <span class="card-badge" id="serverKeyBadge" style="display:none;">✅ 서버 API 키 설정됨</span>
         </div>
+
         <div class="form-row">
-          <label class="form-label">학력 <span class="required">*</span></label>
-          <select id="education">
-            <option value="">선택하세요</option>
-            <option>학사 재학 중</option><option>학사 졸업</option>
-            <option>석사 재학 중</option><option>석사 졸업</option>
-            <option>박사 재학 중</option><option>박사 졸업</option>
+          <label class="form-label">사용할 AI 모델</label>
+          <select id="aiModel" onchange="updateApiKeyLabel()">
+            <option value="claude" selected>Claude 3.5 Sonnet (추천)</option>
+            <option value="gemini-pro">Gemini 1.5 Pro</option>
+            <option value="gemini-flash">Gemini 1.5 Flash</option>
           </select>
         </div>
-      </div>
-      <div class="form-row" style="margin-top:4px">
-        <label class="form-label">전공 <span class="required">*</span></label>
-        <input type="text" id="major" placeholder="예: 화학공학, 신소재공학, 생명공학" />
-      </div>
-    </div>
 
-    <div class="card">
-      <div class="card-header">
-        <span class="card-icon">📄</span>
-        <span class="card-title">이력서 / 자기소개서</span>
-        <span class="card-sub">파일 업로드 또는 직접 입력</span>
-      </div>
-
-      <!-- 파일 업로드 존 -->
-      <div class="upload-zone" id="uploadZone"
-           onclick="document.getElementById('resumeFile').click()"
-           ondragover="event.preventDefault(); this.classList.add('drag-over')"
-           ondragleave="if(!this.contains(event.relatedTarget)) this.classList.remove('drag-over')"
-           ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleFileDrop(event)">
-        <input type="file" id="resumeFile" accept=".pdf,.docx,.doc,.txt" style="display:none"
-               onchange="handleFileSelect(this)" />
-        <div class="upload-icon-big">📁</div>
-        <p class="upload-main-text">파일을 드래그하거나 클릭하여 업로드</p>
-        <p class="upload-sub-text">PDF · DOCX · TXT 형식 지원</p>
-        <button class="btn btn-outline btn-sm" type="button"
-                onclick="event.stopPropagation(); document.getElementById('resumeFile').click()">
-          파일 선택
-        </button>
+        <div class="form-row">
+          <label class="form-label" id="apiKeyLabel">
+            Claude (Anthropic) API Key
+            <span class="hint-text">서버 .env에 API 키가 있으면 비워두어도 됩니다</span>
+          </label>
+          <div class="input-wrap">
+            <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off" />
+            <button class="btn-eye" onclick="toggleApiKey()">👁</button>
+          </div>
+          <p class="warning-box">⚠️ API 키는 서버에서만 사용되며 저장되지 않습니다. 프로덕션 환경에서는 서버 .env 파일에 직접 설정하세요.</p>
+        </div>
       </div>
 
-      <!-- 업로드 상태 -->
-      <div class="upload-status hidden" id="uploadStatus">
-        <span class="upload-file-icon">📎</span>
-        <span class="upload-file-name" id="uploadFilename"></span>
-        <span class="upload-char-count" id="uploadChars"></span>
-        <button class="btn-file-remove" onclick="clearFile()" title="파일 제거">✕ 제거</button>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">👤</span>
+          <span class="card-title">지원자 기본 정보</span>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label class="form-label">지원자 이름</label>
+            <input type="text" id="candidateName" placeholder="홍길동" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">학력 <span class="required">*</span></label>
+            <select id="education">
+              <option value="">선택하세요</option>
+              <option>학사 재학 중</option>
+              <option>학사 졸업</option>
+              <option>석사 재학 중</option>
+              <option>석사 졸업</option>
+              <option>박사 재학 중</option>
+              <option>박사 졸업</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:4px">
+          <label class="form-label">전공 <span class="required">*</span></label>
+          <input type="text" id="major" placeholder="예: 화학공학, 신소재공학, 생명공학" />
+        </div>
       </div>
 
-      <div class="form-row" style="margin-bottom:0">
-        <label class="form-label" style="margin-bottom:6px">
-          직접 입력 또는 파일 추출 결과 <span class="required">*</span>
-          <span class="hint-text">파일 업로드 후 수정 가능합니다</span>
-        </label>
-        <textarea id="resumeText" rows="10" placeholder="이력서와 자기소개서 전체 내용을 붙여넣거나, 위에서 파일을 업로드하세요.
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">📄</span>
+          <span class="card-title">이력서 / 자기소개서</span>
+          <span class="card-sub">파일 업로드 또는 직접 입력</span>
+        </div>
+
+        <!-- 파일 업로드 존 -->
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('resumeFile').click()"
+          ondragover="event.preventDefault(); this.classList.add('drag-over')"
+          ondragleave="if(!this.contains(event.relatedTarget)) this.classList.remove('drag-over')"
+          ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleFileDrop(event)">
+          <input type="file" id="resumeFile" accept=".pdf,.docx,.doc,.txt" style="display:none"
+            onchange="handleFileSelect(this)" />
+          <div class="upload-icon-big">📁</div>
+          <p class="upload-main-text">파일을 드래그하거나 클릭하여 업로드</p>
+          <p class="upload-sub-text">PDF · DOCX · TXT 형식 지원</p>
+          <button class="btn btn-outline btn-sm" type="button"
+            onclick="event.stopPropagation(); document.getElementById('resumeFile').click()">
+            파일 선택
+          </button>
+        </div>
+
+        <!-- 업로드 상태 -->
+        <div class="upload-status hidden" id="uploadStatus">
+          <span class="upload-file-icon">📎</span>
+          <span class="upload-file-name" id="uploadFilename"></span>
+          <span class="upload-char-count" id="uploadChars"></span>
+          <button class="btn-file-remove" onclick="clearFile()" title="파일 제거">✕ 제거</button>
+        </div>
+
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label" style="margin-bottom:6px">
+            직접 입력 또는 파일 추출 결과 <span class="required">*</span>
+            <span class="hint-text">파일 업로드 후 수정 가능합니다</span>
+          </label>
+          <textarea id="resumeText" rows="10" placeholder="이력서와 자기소개서 전체 내용을 붙여넣거나, 위에서 파일을 업로드하세요.
 
 [예시]
 ■ 학력: 한국대학교 화학공학과 4학년 (GPA 4.0/4.5)
@@ -126,73 +141,76 @@
   - 리튬이온배터리 NMC811 양극재 합성 및 전기화학 특성 평가 (6개월)
   - HPLC, GC-MS를 활용한 유기 합성 순도 분석
 ■ 자기소개서: ..."></textarea>
-        <div class="char-counter"><span id="charCount">0</span>자</div>
+          <div class="char-counter"><span id="charCount">0</span>자</div>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-header">
-        <span class="card-icon">🏢</span>
-        <span class="card-title">지원 회사 및 희망 직무</span>
-        <span class="card-sub">복수 지원 시 회사별 맞춤 보고서 생성</span>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-icon">🏢</span>
+          <span class="card-title">지원 회사 및 희망 직무</span>
+          <span class="card-sub">복수 지원 시 회사별 맞춤 보고서 생성</span>
+        </div>
+        <div id="companiesContainer"></div>
+        <button class="btn btn-outline btn-sm" onclick="addCompany()">＋ 회사 추가</button>
       </div>
-      <div id="companiesContainer"></div>
-      <button class="btn btn-outline btn-sm" onclick="addCompany()">＋ 회사 추가</button>
-    </div>
 
-    <div class="generate-wrap">
-      <button class="btn btn-primary btn-xl" onclick="generateReport()">
-        🚀 면접 컨설팅 보고서 생성
-      </button>
-      <p class="generate-hint">임원·실무진·PT·토론 면접 형식별 맞춤 보고서를 자동으로 작성합니다 (약 30~60초)</p>
-    </div>
-
-  </section>
-
-  <!-- 로딩 섹션 -->
-  <section id="loadingSection" class="hidden">
-    <div class="loading-card">
-      <div class="dna-spinner">
-        <div class="dna-bar"></div><div class="dna-bar"></div>
-        <div class="dna-bar"></div><div class="dna-bar"></div>
-        <div class="dna-bar"></div>
+      <div class="generate-wrap">
+        <button class="btn btn-primary btn-xl" onclick="generateReport()">
+          🚀 면접 컨설팅 보고서 생성
+        </button>
+        <p class="generate-hint">임원·실무진·PT·토론 면접 형식별 맞춤 보고서를 자동으로 작성합니다 (약 30~60초)</p>
       </div>
-      <div class="loading-title" id="loadingTitle">AI가 지원자 역량을 분석 중입니다...</div>
-      <div class="loading-steps">
-        <div class="loading-step" id="ls1">📊 직무 적합성 분석</div>
-        <div class="loading-step" id="ls2">🔬 산업 트렌드 맵핑</div>
-        <div class="loading-step" id="ls3">🎯 면접 질문 설계</div>
-        <div class="loading-step" id="ls4">📋 평가 기준 수립</div>
+
+    </section>
+
+    <!-- 로딩 섹션 -->
+    <section id="loadingSection" class="hidden">
+      <div class="loading-card">
+        <div class="dna-spinner">
+          <div class="dna-bar"></div>
+          <div class="dna-bar"></div>
+          <div class="dna-bar"></div>
+          <div class="dna-bar"></div>
+          <div class="dna-bar"></div>
+        </div>
+        <div class="loading-title" id="loadingTitle">AI가 지원자 역량을 분석 중입니다...</div>
+        <div class="loading-steps">
+          <div class="loading-step" id="ls1">📊 직무 적합성 분석</div>
+          <div class="loading-step" id="ls2">🔬 산업 트렌드 맵핑</div>
+          <div class="loading-step" id="ls3">🎯 면접 질문 설계</div>
+          <div class="loading-step" id="ls4">📋 평가 기준 수립</div>
+        </div>
+        <div class="streaming-preview">
+          <div class="streaming-label">실시간 생성 중...</div>
+          <div id="streamingText" class="streaming-text"></div>
+        </div>
       </div>
-      <div class="streaming-preview">
-        <div class="streaming-label">실시간 생성 중...</div>
-        <div id="streamingText" class="streaming-text"></div>
+    </section>
+
+    <!-- 결과 섹션 -->
+    <section id="reportSection" class="hidden">
+      <div class="report-toolbar">
+        <div class="report-meta" id="reportMeta"></div>
+        <div class="report-actions">
+          <button class="btn btn-outline" onclick="copyReport()">📋 복사</button>
+          <button class="btn btn-outline" onclick="window.print()">🖨️ 인쇄 / PDF</button>
+          <button class="btn btn-primary" onclick="resetAll()">🔄 새 보고서 생성</button>
+        </div>
       </div>
-    </div>
-  </section>
+      <div class="report-body" id="reportBody"></div>
+    </section>
 
-  <!-- 결과 섹션 -->
-  <section id="reportSection" class="hidden">
-    <div class="report-toolbar">
-      <div class="report-meta" id="reportMeta"></div>
-      <div class="report-actions">
-        <button class="btn btn-outline" onclick="copyReport()">📋 복사</button>
-        <button class="btn btn-outline" onclick="window.print()">🖨️ 인쇄 / PDF</button>
-        <button class="btn btn-primary" onclick="resetAll()">🔄 새 보고서 생성</button>
-      </div>
-    </div>
-    <div class="report-body" id="reportBody"></div>
-  </section>
+  </main>
 
-</main>
+  <footer class="site-footer">
+    <p>화학·배터리·바이오 면접 컨설팅 보고서 생성기 &nbsp;|&nbsp; Claude & Gemini 지원 &nbsp;|&nbsp; 비전문가 임원 · 실무진 면접관 모두를 위한 구조화 보고서</p>
+  </footer>
 
-<footer class="site-footer">
-  <p>화학·배터리·바이오 면접 컨설팅 보고서 생성기 &nbsp;|&nbsp; Claude AI 기반 &nbsp;|&nbsp; 비전문가 임원 · 실무진 면접관 모두를 위한 구조화 보고서</p>
-</footer>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="app.js"></script>
 </body>
+
 </html>

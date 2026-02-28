@@ -2,7 +2,9 @@
 export default function handler(req, res) {
   res.json({
     status: 'ok',
-    serverApiKey: !!(process.env.ANTHROPIC_API_KEY),
+    hasAnthropicKey: !!(process.env.ANTHROPIC_API_KEY),
+    hasGeminiKey: !!(process.env.GEMINI_API_KEY),
+    serverApiKey: !!(process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY),
     env: process.env.VERCEL ? 'vercel' : 'local',
   });
 }

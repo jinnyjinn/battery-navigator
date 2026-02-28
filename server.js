@@ -60,23 +60,25 @@ const SYSTEM_PROMPT = `당신은 LG화학, 삼성바이오로직스 등 글로�
 //  API 라우트: 보고서 생성 (SSE 스트리밍)
 // ─────────────────────────────────────────────
 app.post('/api/generate', async (req, res) => {
-  const { apiKey, candidateName, education, major, resumeText, companies } = req.body;
+  const { model = 'claude', apiKey, candidateName, education, major, resumeText, companies } = req.body;
 
   if (!resumeText || !companies?.length) {
     return res.status(400).json({ error: '이력서와 지원 회사 정보를 입력해주세요.' });
   }
 
-  const anthropicKey = apiKey || process.env.ANTHROPIC_API_KEY;
-  if (!anthropicKey || anthropicKey === 'your_api_key_here') {
+  const isGemini = model.startsWith('gemini');
+  const activeKey = apiKey || (isGemini ? process.env.GEMINI_API_KEY : process.env.ANTHROPIC_API_KEY);
+
+  if (!activeKey || activeKey === 'your_api_key_here') {
+    const modelName = isGemini ? 'Gemini' : 'Claude';
+    const envName = isGemini ? 'GEMINI_API_KEY' : 'ANTHROPIC_API_KEY';
     return res.status(400).json({
-      error: 'API 키가 없습니다. 화면의 API 키 입력란에 Anthropic API 키를 입력하거나, 서버 .env 파일에 ANTHROPIC_API_KEY를 설정하세요.'
+      error: `API 키가 없습니다. 화면의 API 키 입력란에 ${modelName} API 키를 입력하거나, 서버 .env 파일에 ${envName}를 설정하세요.`
     });
   }
 
-  const client = new Anthropic({ apiKey: anthropicKey });
-
   const companiesText = companies
-    .map((c, i) => `${i+1}. 지원 회사: ${c.name} / 희망 직무: ${c.position}${c.extra ? ' / 추가 정보: '+c.extra : ''}`)
+    .map((c, i) => `${i + 1}. 지원 회사: ${c.name} / 희망 직무: ${c.position}${c.extra ? ' / 추가 정보: ' + c.extra : ''}`)
     .join('\n');
 
   const userPrompt = `다음 지원자의 정보를 바탕으로 면접 컨설팅 보고서를 작성해주세요.
@@ -94,9 +96,9 @@ ${resumeText}
 
 ---
 ${companies.length > 1
-  ? `지원 회사가 ${companies.length}곳이므로, 각 회사별로 분리된 보고서를 작성해주세요.\n각 회사 보고서 앞에 "---" 구분선과 "# 🏢 [회사명] 면접 가이드" 헤더를 사용하세요.`
-  : `"# 🏢 [${companies[0].name}] 면접 가이드" 헤더로 시작하여 보고서를 작성해주세요.`
-}
+      ? `지원 회사가 ${companies.length}곳이므로 각 회사별 "# 🏢 [회사명] 면접 가이드" 헤더로 분리 작성해주세요.`
+      : `"# 🏢 [${companies[0].name}] 면접 가이드" 헤더로 시작해주세요.`
+    }
 Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(📋) 구조를 모두 포함한 완전한 보고서를 작성해주세요.`;
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -104,24 +106,64 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    const stream = client.messages.stream({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }]
-    });
+    if (isGemini) {
+      // Gemini API (Node 18+ fetch 사용)
+      const geminiModel = model === 'gemini-pro' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: { text: SYSTEM_PROMPT } },
+          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            maxOutputTokens: 8000,
+            temperature: 0.7,
+          },
+        }),
+      });
 
-    stream.on('text', (text) => {
-      res.write(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`);
-    });
-    stream.on('message', () => {
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson?.error?.message || `Gemini API 오류 (${response.status})`);
+      }
+
+      for await (const chunk of response.body) {
+        const lines = chunk.toString().split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const ev = JSON.parse(line.slice(6));
+            const text = ev.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              res.write(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`);
+            }
+          } catch (_) { }
+        }
+      }
       res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
       res.end();
-    });
-    stream.on('error', (err) => {
-      res.write(`data: ${JSON.stringify({ type: 'error', message: err.message })}\n\n`);
-      res.end();
-    });
+    } else {
+      // Anthropic API
+      const client = new Anthropic({ apiKey: activeKey });
+      const stream = client.messages.stream({
+        model: 'claude-3-5-sonnet-20240620',
+        max_tokens: 8000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userPrompt }]
+      });
+
+      stream.on('text', (text) => {
+        res.write(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`);
+      });
+      stream.on('message', () => {
+        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        res.end();
+      });
+      stream.on('error', (err) => {
+        res.write(`data: ${JSON.stringify({ type: 'error', message: err.message })}\n\n`);
+        res.end();
+      });
+    }
   } catch (err) {
     res.write(`data: ${JSON.stringify({ type: 'error', message: err.message })}\n\n`);
     res.end();
@@ -131,7 +173,10 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    serverApiKey: !!(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your_api_key_here')
+    hasAnthropicKey: !!(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your_api_key_here'),
+    hasGeminiKey: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_api_key_here'),
+    serverApiKey: !!((process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your_api_key_here') ||
+      (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_api_key_here'))
   });
 });
 

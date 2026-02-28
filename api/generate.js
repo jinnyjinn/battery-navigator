@@ -77,7 +77,7 @@ export default async function handler(req) {
     });
   }
 
-  const { apiKey, candidateName, education, major, resumeText, companies } = body;
+  const { model = 'claude', apiKey, candidateName, education, major, resumeText, companies } = body;
 
   if (!resumeText || !companies?.length) {
     return new Response(JSON.stringify({ error: '이력서와 지원 회사 정보를 입력해주세요.' }), {
@@ -86,10 +86,14 @@ export default async function handler(req) {
     });
   }
 
-  const anthropicKey = apiKey || process.env.ANTHROPIC_API_KEY;
-  if (!anthropicKey || anthropicKey === 'your_api_key_here') {
+  const isGemini = model.startsWith('gemini');
+  const activeKey = apiKey || (isGemini ? process.env.GEMINI_API_KEY : process.env.ANTHROPIC_API_KEY);
+
+  if (!activeKey) {
+    const modelName = isGemini ? 'Gemini' : 'Claude';
+    const envName = isGemini ? 'GEMINI_API_KEY' : 'ANTHROPIC_API_KEY';
     return new Response(
-      JSON.stringify({ error: 'API 키가 없습니다. 화면에서 입력하거나 Vercel 환경 변수 ANTHROPIC_API_KEY를 설정하세요.' }),
+      JSON.stringify({ error: `API 키가 없습니다. 화면에서 입력하거나 Vercel 환경 변수 ${envName}를 설정하세요.` }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     );
   }
@@ -121,55 +125,103 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
 
   const encoder = new TextEncoder();
 
-  // ReadableStream으로 Anthropic API 스트리밍 → SSE 전달
+  // ReadableStream으로 AI API 스트리밍 → SSE 전달
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // raw fetch 사용 (Edge Runtime 완전 호환)
-        const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': anthropicKey,
-            'anthropic-version': '2023-06-01',
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-6',
-            max_tokens: 8000,
-            stream: true,
-            system: SYSTEM_PROMPT,
-            messages: [{ role: 'user', content: userPrompt }],
-          }),
-        });
+        if (isGemini) {
+          // Gemini API 스트리밍
+          const geminiModel = model === 'gemini-pro' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              system_instruction: { parts: { text: SYSTEM_PROMPT } },
+              contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+              generationConfig: {
+                maxOutputTokens: 8000,
+                temperature: 0.7,
+              },
+            }),
+          });
 
-        if (!anthropicRes.ok) {
-          const errJson = await anthropicRes.json().catch(() => ({}));
-          throw new Error(errJson?.error?.message || `Anthropic API 오류 (${anthropicRes.status})`);
-        }
+          if (!geminiRes.ok) {
+            const errJson = await geminiRes.json().catch(() => ({}));
+            throw new Error(errJson?.error?.message || `Gemini API 오류 (${geminiRes.status})`);
+          }
 
-        const reader = anthropicRes.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+          const reader = geminiRes.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop(); // 마지막 불완전 줄 보존
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
 
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const raw = line.slice(6).trim();
-            if (raw === '[DONE]') continue;
-            try {
-              const ev = JSON.parse(raw);
-              if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
-                const out = JSON.stringify({ type: 'text', content: ev.delta.text });
-                controller.enqueue(encoder.encode(`data: ${out}\n\n`));
-              }
-            } catch (_) { /* 불완전 JSON 무시 */ }
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              try {
+                const raw = line.slice(6);
+                const ev = JSON.parse(raw);
+                const text = ev.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                  const out = JSON.stringify({ type: 'text', content: text });
+                  controller.enqueue(encoder.encode(`data: ${out}\n\n`));
+                }
+              } catch (_) {}
+            }
+          }
+        } else {
+          // Anthropic API 스트리밍
+          const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': activeKey,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-3-5-sonnet-20240620', // 최신 모델로 업데이트
+              max_tokens: 8000,
+              stream: true,
+              system: SYSTEM_PROMPT,
+              messages: [{ role: 'user', content: userPrompt }],
+            }),
+          });
+
+          if (!anthropicRes.ok) {
+            const errJson = await anthropicRes.json().catch(() => ({}));
+            throw new Error(errJson?.error?.message || `Anthropic API 오류 (${anthropicRes.status})`);
+          }
+
+          const reader = anthropicRes.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const raw = line.slice(6).trim();
+              if (raw === '[DONE]') continue;
+              try {
+                const ev = JSON.parse(raw);
+                if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+                  const out = JSON.stringify({ type: 'text', content: ev.delta.text });
+                  controller.enqueue(encoder.encode(`data: ${out}\n\n`));
+                }
+              } catch (_) {}
+            }
           }
         }
 
