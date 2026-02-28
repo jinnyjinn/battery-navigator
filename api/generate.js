@@ -118,9 +118,9 @@ ${resumeText}
 
 ---
 ${companies.length > 1
-    ? `지원 회사가 ${companies.length}곳이므로 각 회사별 "# 🏢 [회사명] 면접 가이드" 헤더로 분리 작성해주세요.`
-    : `"# 🏢 [${companies[0].name}] 면접 가이드" 헤더로 시작해주세요.`
-  }
+      ? `지원 회사가 ${companies.length}곳이므로 각 회사별 "# 🏢 [회사명] 면접 가이드" 헤더로 분리 작성해주세요.`
+      : `"# 🏢 [${companies[0].name}] 면접 가이드" 헤더로 시작해주세요.`
+    }
 Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(📋) 구조를 모두 포함한 완전한 보고서를 작성해주세요.`;
 
   const encoder = new TextEncoder();
@@ -131,12 +131,12 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
       try {
         if (isGemini) {
           // Gemini API 스트리밍
-          const geminiModel = model === 'gemini-pro' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+          const geminiModel = model === 'gemini-pro' ? 'gemini-1.5-pro-latest' : 'gemini-1.5-flash-latest';
           const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              system_instruction: { parts: { text: SYSTEM_PROMPT } },
+              system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
               contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
               generationConfig: {
                 maxOutputTokens: 8000,
@@ -172,7 +172,7 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
                   const out = JSON.stringify({ type: 'text', content: text });
                   controller.enqueue(encoder.encode(`data: ${out}\n\n`));
                 }
-              } catch (_) {}
+              } catch (_) { }
             }
           }
         } else {
@@ -220,7 +220,7 @@ Page 1(📊), Page 2(🎯 면접 형식별: 임원/실무진/PT/토론), Page 3(
                   const out = JSON.stringify({ type: 'text', content: ev.delta.text });
                   controller.enqueue(encoder.encode(`data: ${out}\n\n`));
                 }
-              } catch (_) {}
+              } catch (_) { }
             }
           }
         }
