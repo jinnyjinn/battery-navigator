@@ -6,12 +6,6 @@ export const config = { runtime: 'edge' };
 
 const SYSTEM_PROMPT = `당신은 LG화학, 삼성바이오로직스 등 글로벌 화학/배터리/바이오 대기업에서 15년간 R&D 및 생산기술(QC) 수석 연구원으로 근무하다 인사팀장으로 발탁된 '최고급 전문 면접 컨설턴트'입니다.
 비전문가 임원부터 날카로운 실무진까지 모든 면접관이 활용할 수 있도록, 면접 형식별로 구분된 완전한 컨설팅 보고서를 작성합니다.
-
-## 보고서 구성 (지원 회사가 2곳 이상이면 회사별로 반복)
-### Page 1: 📊 핵심 요약 및 직무 적합성 분석
-### Page 2: 🎯 면접 형식별 심층 질문 리스트 (임원/실무진/PT/토론)
-### Page 3: 📋 종합 평가표 및 합격 가이드
-
 표, 목록, 요약 활용한 구조화된 마크다운으로 작성하세요.`;
 
 export default async function handler(req) {
@@ -35,24 +29,14 @@ export default async function handler(req) {
   }
 
   const { model = 'claude-3-5-sonnet-20240620', apiKey, candidateName, education, major, resumeText, companies } = body;
-
-  if (!resumeText || !companies?.length) {
-    return new Response(JSON.stringify({ error: '데이터 부족' }), { status: 400 });
-  }
-
   const isGemini = model.startsWith('gemini');
   const rawKey = apiKey || (isGemini ? process.env.GEMINI_API_KEY : process.env.ANTHROPIC_API_KEY);
   const activeKey = rawKey ? rawKey.trim() : null;
 
-  if (!activeKey) {
-    return new Response(JSON.stringify({ error: 'API 키가 필요합니다.' }), { status: 400 });
-  }
+  if (!activeKey) return new Response(JSON.stringify({ error: 'API 키가 필요합니다.' }), { status: 400 });
 
-  const companiesText = companies
-    .map((c, i) => `${i + 1}. 회사: ${c.name} / 직무: ${c.position}`)
-    .join('\n');
-
-  const userPrompt = `지원자: ${candidateName}, 전공: ${major}\n지원회사:\n${companiesText}\n\n이력서:\n${resumeText}`;
+  const companiesText = companies.map((c, i) => `${i + 1}. 회사: ${c.name} / 직무: ${c.position}`).join('\n');
+  const userPrompt = `지원자: ${candidateName}, 전공: ${major}\n지원회사:\n${companiesText}\n\n이력서:\n${resumeText}\n--- 면접 보고서 작성을 시작하세요.`;
 
   const encoder = new TextEncoder();
 
@@ -60,19 +44,20 @@ export default async function handler(req) {
     async start(controller) {
       try {
         if (isGemini) {
-          // Gemini API v1beta (최대 호환성 버전) 사용
-          // 모델명 보정: gemini-1.5-flash -> gemini-1.5-flash-latest 등
-          let geminiModel = model;
-          if (model === 'gemini-1.5-flash') geminiModel = 'gemini-1.5-flash-latest';
-          if (model === 'gemini-1.5-pro') geminiModel = 'gemini-1.5-pro-latest';
-          if (model === 'gemini-pro') geminiModel = 'gemini-1.0-pro';
+          // Gemini API - 가장 호환성 높은 v1beta + 표준 명칭 사용
+          const geminiModel = (model === 'gemini-1.5-flash' || model === 'gemini-1.5-flash-latest') ? 'gemini-1.5-flash' : 'gemini-1.5-pro';
 
-          const combinedPrompt = `[시스템 지침]\n${SYSTEM_PROMPT}\n\n[사용자 요청]\n${userPrompt}`;
           const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
+              system_instruction: {
+                parts: [{ text: SYSTEM_PROMPT }]
+              },
+              contents: [{
+                role: 'user',
+                parts: [{ text: userPrompt }]
+              }],
               generationConfig: { maxOutputTokens: 8000, temperature: 0.7 }
             })
           });
@@ -120,11 +105,7 @@ export default async function handler(req) {
             })
           });
 
-          if (!anthropicRes.ok) {
-            const errJson = await anthropicRes.json().catch(() => ({}));
-            throw new Error(errJson?.error?.message || `Anthropic 오류: ${anthropicRes.status}`);
-          }
-
+          if (!anthropicRes.ok) throw new Error(`Anthropic 오류: ${anthropicRes.status}`);
           const reader = anthropicRes.body.getReader();
           const decoder = new TextDecoder();
           let buffer = '';
