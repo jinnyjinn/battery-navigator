@@ -118,7 +118,7 @@ Page 1(📊), Page 2(🎯), Page 3(📋) 구조를 모두 포함한 완전한 �
             'anthropic-version': '2023-06-01',
           },
           body: JSON.stringify({
-            model: 'claude-opus-4-5',
+            model: 'claude-sonnet-4-6',
             max_tokens: 8000,
             stream: true,
             system: SYSTEM_PROMPT,

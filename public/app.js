@@ -141,16 +141,15 @@ async function generateReport() {
       buffer = lines.pop();
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
-        try {
-          const ev = JSON.parse(line.slice(6));
-          if (ev.type === 'text') {
-            fullReportText += ev.content;
-            streamEl.textContent = '...' + fullReportText.slice(-400);
-            streamEl.parentElement.scrollTop = streamEl.parentElement.scrollHeight;
-          } else if (ev.type === 'error') {
-            throw new Error(ev.message);
-          }
-        } catch (_) {}
+        let ev;
+        try { ev = JSON.parse(line.slice(6)); } catch (_) { continue; }
+        if (ev.type === 'text') {
+          fullReportText += ev.content;
+          streamEl.textContent = '...' + fullReportText.slice(-400);
+          streamEl.parentElement.scrollTop = streamEl.parentElement.scrollHeight;
+        } else if (ev.type === 'error') {
+          throw new Error(ev.message);
+        }
       }
     }
 
