@@ -2,6 +2,7 @@
 //  Vercel Edge Function — 보고서 생성 (SSE 스트리밍)
 //  Edge Runtime: 스트리밍 무제한, 전 세계 엣지 서버 실행
 // ─────────────────────────────────────────────
+//  Version: 1.0.5 - Ultimate Compatibility v1
 export const config = { runtime: 'edge' };
 
 const SYSTEM_PROMPT = `당신은 LG화학, 삼성바이오로직스 등 글로벌 화학/배터리/바이오 대기업에서 15년간 R&D 및 생산기술(QC) 수석 연구원으로 근무하다 인사팀장으로 발곽된 '최고급 전문 면접 컨설턴트'입니다.
