@@ -60,9 +60,15 @@ export default async function handler(req) {
     async start(controller) {
       try {
         if (isGemini) {
-          // Gemini API v1 (정식 버전) 사용
+          // Gemini API v1beta (최대 호환성 버전) 사용
+          // 모델명 보정: gemini-1.5-flash -> gemini-1.5-flash-latest 등
+          let geminiModel = model;
+          if (model === 'gemini-1.5-flash') geminiModel = 'gemini-1.5-flash-latest';
+          if (model === 'gemini-1.5-pro') geminiModel = 'gemini-1.5-pro-latest';
+          if (model === 'gemini-pro') geminiModel = 'gemini-1.0-pro';
+
           const combinedPrompt = `[시스템 지침]\n${SYSTEM_PROMPT}\n\n[사용자 요청]\n${userPrompt}`;
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:streamGenerateContent?alt=sse&key=${activeKey}`, {
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -97,7 +103,7 @@ export default async function handler(req) {
             }
           }
         } else {
-          // Anthropic
+          // Anthropic 생략 (동일)
           const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
