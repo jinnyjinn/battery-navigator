@@ -46,7 +46,8 @@ app.post('/api/generate', async (req, res) => {
   try {
     if (isGemini) {
       let geminiModel = model;
-      if (model === 'gemini-2.5-flash') geminiModel = 'gemini-2.5-flash';
+      if (model === 'gemini-3.1-pro-preview') geminiModel = 'gemini-3.1-pro-preview';
+      else if (model === 'gemini-2.5-flash') geminiModel = 'gemini-2.5-flash';
       else if (model === 'gemini-2.5-pro') geminiModel = 'gemini-2.5-pro';
       else if (model === 'gemini-2.5-flash-lite') geminiModel = 'gemini-2.5-flash-lite';
       else geminiModel = 'gemini-2.5-flash';
@@ -58,7 +59,7 @@ app.post('/api/generate', async (req, res) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
-          generationConfig: { maxOutputTokens: 32000, temperature: 0.7 }
+          generationConfig: { maxOutputTokens: 65536, temperature: 0.7 }
         }),
       });
 

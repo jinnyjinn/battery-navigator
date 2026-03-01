@@ -2,7 +2,7 @@
 //  Vercel Edge Function — 보고서 생성 (SSE 스트리밍)
 //  Edge Runtime: 스트리밍 무제한, 전 세계 엣지 서버 실행
 // ─────────────────────────────────────────────
-//  Version: 1.0.5 - Ultimate Compatibility v1
+//  Version: 1.0.6 - Gemini 3.1 Pro Preview 지원 추가
 export const config = { runtime: 'edge' };
 
 const SYSTEM_PROMPT = `당신은 LG화학, 삼성바이오로직스 등 글로벌 화학/배터리/바이오 대기업에서 15년간 R&D 및 생산기술(QC) 수석 연구원으로 근무하다 인사팀장으로 발곽된 '최고급 전문 면접 컨설턴트'입니다.
@@ -47,8 +47,9 @@ export default async function handler(req) {
         if (isGemini) {
           // Gemini API - 가장 호환성 높은 v1 정식 버전 + 프롬프트 병합 방식
           let geminiModel = model;
-          // 모델명 정규화 (1.5 Flash/Pro 정식 명칭 사용)
-          if (model === 'gemini-2.5-flash') geminiModel = 'gemini-2.5-flash';
+          // 모델명 정규화
+          if (model === 'gemini-3.1-pro-preview') geminiModel = 'gemini-3.1-pro-preview';
+          else if (model === 'gemini-2.5-flash') geminiModel = 'gemini-2.5-flash';
           else if (model === 'gemini-2.5-pro') geminiModel = 'gemini-2.5-pro';
           else if (model === 'gemini-2.5-flash-lite') geminiModel = 'gemini-2.5-flash-lite';
           else geminiModel = 'gemini-2.5-flash';
@@ -64,7 +65,7 @@ export default async function handler(req) {
                 role: 'user',
                 parts: [{ text: combinedPrompt }]
               }],
-              generationConfig: { maxOutputTokens: 32000, temperature: 0.7 }
+              generationConfig: { maxOutputTokens: 65536, temperature: 0.7 }
             })
           });
 
