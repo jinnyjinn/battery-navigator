@@ -110,6 +110,11 @@ export default async function handler(req) {
             })
           });
 
+          if (!anthropicRes.ok) {
+            const errJson = await anthropicRes.json().catch(() => ({}));
+            throw new Error(errJson?.error?.message || `Anthropic API 오류: ${anthropicRes.status}`);
+          }
+
           const reader = anthropicRes.body.getReader();
           const decoder = new TextDecoder();
           let buffer = '';
