@@ -46,8 +46,8 @@ app.post('/api/generate', async (req, res) => {
   try {
     if (isGemini) {
       let geminiModel = model;
-      if (model.includes('flash')) geminiModel = 'gemini-1.5-flash-latest';
-      else if (model.includes('pro') && model !== 'gemini-pro') geminiModel = 'gemini-1.5-pro-latest';
+      if (model.includes('flash')) geminiModel = 'gemini-1.5-flash';
+      else if (model.includes('pro') && model !== 'gemini-pro') geminiModel = 'gemini-1.5-pro';
       else if (model === 'gemini-pro') geminiModel = 'gemini-1.0-pro';
 
       const combinedPrompt = `${SYSTEM_PROMPT}\n\n### 면접 컨설팅 요청 내용 ###\n${userPrompt}`;
