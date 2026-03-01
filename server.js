@@ -46,13 +46,13 @@ app.post('/api/generate', async (req, res) => {
   try {
     if (isGemini) {
       let geminiModel = model;
-      if (model.includes('flash')) geminiModel = 'gemini-1.5-flash';
-      else if (model.includes('pro') && model !== 'gemini-pro') geminiModel = 'gemini-1.5-pro';
+      if (model.includes('flash')) geminiModel = 'gemini-1.5-flash-latest';
+      else if (model.includes('pro') && model !== 'gemini-pro') geminiModel = 'gemini-1.5-pro-latest';
       else if (model === 'gemini-pro') geminiModel = 'gemini-1.0-pro';
 
       const combinedPrompt = `${SYSTEM_PROMPT}\n\n### 면접 컨설팅 요청 내용 ###\n${userPrompt}`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse&key=${activeKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
