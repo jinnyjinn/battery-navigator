@@ -41,9 +41,9 @@ function updateApiKeyLabel() {
   } else {
     label.innerHTML = 'Gemini (Google Cloud) API Key <span class="hint-text">서버 .env에 API 키가 있으면 비워두어도 됩니다</span>';
     input.placeholder = 'AIzaSy...';
-    if (model === 'gemini-1.5-pro') headerBadge.textContent = 'Gemini 1.5 Pro 기반';
-    else if (model === 'gemini-pro') headerBadge.textContent = 'Gemini 1.0 Pro 기반';
-    else headerBadge.textContent = 'Gemini 1.5 Flash 기반';
+    if (model === 'gemini-2.5-pro') headerBadge.textContent = 'Gemini 2.5 Pro 기반';
+    else if (model === 'gemini-2.5-flash-lite') headerBadge.textContent = 'Gemini 2.5 Flash Lite 기반';
+    else headerBadge.textContent = 'Gemini 2.5 Flash 기반';
     badge.style.display = window.serverKeys?.gemini ? 'flex' : 'none';
   }
 }

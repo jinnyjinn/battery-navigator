@@ -58,7 +58,7 @@ app.post('/api/generate', async (req, res) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
-          generationConfig: { maxOutputTokens: 8000, temperature: 0.7 }
+          generationConfig: { maxOutputTokens: 32000, temperature: 0.7 }
         }),
       });
 
