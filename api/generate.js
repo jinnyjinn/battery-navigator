@@ -48,10 +48,10 @@ export default async function handler(req) {
           // Gemini API - 가장 호환성 높은 v1 정식 버전 + 프롬프트 병합 방식
           let geminiModel = model;
           // 모델명 정규화 (1.5 Flash/Pro 정식 명칭 사용)
-          if (model === 'gemini-2.0-flash') geminiModel = 'gemini-2.0-flash';
-          else if (model === 'gemini-2.0-flash-lite') geminiModel = 'gemini-2.0-flash-lite';
-          else if (model.includes('1.5-flash')) geminiModel = 'gemini-1.5-flash';
-          else geminiModel = 'gemini-2.0-flash';
+          if (model === 'gemini-2.5-flash') geminiModel = 'gemini-2.5-flash';
+          else if (model === 'gemini-2.5-pro') geminiModel = 'gemini-2.5-pro';
+          else if (model === 'gemini-2.5-flash-lite') geminiModel = 'gemini-2.5-flash-lite';
+          else geminiModel = 'gemini-2.5-flash';
 
           // system_instruction 대신 첫 메시지에 지침과 요청을 합침 (모든 키에서 호환됨)
           const combinedPrompt = `${SYSTEM_PROMPT}\n\n### 면접 컨설팅 요청 내용 ###\n${userPrompt}`;
